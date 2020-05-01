@@ -15,16 +15,26 @@ namespace SoulMemory_Calc
     {
         public Dictionary<int, Tuple<int,int>> soulTiers;
         int soulTier;
+        List<MPAction> actionList;
+        int minMatchTier= 0;
+        int maxMatchTier = 0;
+
 
         public Form1()
         {
             InitializeComponent();
-            SetupDictionary();
+            SetupStuff();
             txtInput.MaxLength = 9;
             this.TopMost = true;
             Font font = new Font("Consolas", 10.0f);
             foreach (Control control in Controls)
-                control.Font = font;
+            {
+                if(!(control.Text == "Chaoticoz"))
+                {
+                    control.Font = font;
+                }
+            }
+            
         }
 
 
@@ -50,22 +60,7 @@ namespace SoulMemory_Calc
             
         }
 
-        private Tuple<int,int> getMatchingSoulLevels(int soulTier)
-        {
-            int minMatchTier, maxMatchTier;
-            int minMatchSM, maxMatchSM;
-            minMatchTier = chkRing.Checked ? soulTier - 6 : soulTier - 3;
-            if(minMatchTier <=0) { minMatchTier = 1; }
-            maxMatchTier = chkRing.Checked ? soulTier + 4 : soulTier + 1;
-            if(maxMatchTier > 44) { maxMatchTier = 44; }
-
-            soulTiers.TryGetValue(minMatchTier, out Tuple<int, int> resMin);
-            minMatchSM = resMin.Item1;
-            soulTiers.TryGetValue(maxMatchTier, out Tuple<int, int> resMax);
-            maxMatchSM = resMax.Item2;
-            return Tuple.Create(minMatchSM, maxMatchSM);
-
-        }
+       
         private int getTierFromSoulMemory(int sm)
         {
             for (int i = 1; i <= 44; i++)
@@ -78,7 +73,8 @@ namespace SoulMemory_Calc
             }
             return 0;
         }
-        private void SetupDictionary()
+
+        private void SetupStuff()
         {
             soulTiers = new Dictionary<int, Tuple<int, int>>();
 
@@ -127,12 +123,27 @@ namespace SoulMemory_Calc
             soulTiers.Add(43, Tuple.Create(30000000, 44999999));
             soulTiers.Add(44, Tuple.Create(45000000, 999999999));
 
+            actionList = new List<MPAction>()
+            {
+                new MPAction("White Sign Soapstone", 1, 3, true),
+                new MPAction("Small White Sign Soapstone", 2, 4, true),
+                new MPAction("Red Sign Soapstone", 2, 5),
+                new MPAction("Cracked Red Eye Orb", 4, 0),
+                new MPAction("Crest of the Rat", 1, 3),
+                new MPAction("Guardian's Seal", 4, 5),
+                new MPAction("Dragon Eye", 5, 5),
+                new MPAction("Cracked Blue Eye Orb", 3, 3),
+                new MPAction("Bell Keeper's Seal", 3, 1)
+            };
+
+            foreach(MPAction ac in actionList){
+                cmbAction.Items.Add(ac.clearName);
+            }
+
+            cmbAction.SelectedIndex = 0;
         }
 
-        private void Form1_Load(object sender, EventArgs e)
-        {
-           
-        }
+
         private void UpdateLabels()
         {
             if (txtInput.Text == "") { return; }
@@ -147,8 +158,40 @@ namespace SoulMemory_Calc
             }
             if (soulTier != 0)
             {
-                lblMin.Text = string.Format("{0:#,0}",getMatchingSoulLevels(soulTier).Item1);
-                lblMax.Text =  string.Format("{0:#,0}", getMatchingSoulLevels(soulTier).Item2);
+                foreach(MPAction ac in actionList)
+                {
+                    if(ac.clearName == cmbAction.SelectedItem.ToString())
+                    {
+                        if (ac.changedByRing)
+                        {
+                            if (chkRing.Checked)
+                            {
+                                maxMatchTier = soulTier + ac.upperTier + 3;
+                                minMatchTier = soulTier - ac.lowerTier - 3;
+                            }
+                            else
+                            {
+                                maxMatchTier = soulTier + ac.upperTier;
+                                minMatchTier = soulTier - ac.lowerTier;
+                            }
+
+                        }
+                        else
+                        {
+                            maxMatchTier = soulTier + ac.upperTier;
+                            minMatchTier = soulTier - ac.lowerTier;
+                        }
+                        if (minMatchTier < 1) { minMatchTier = 1; }
+                        if (maxMatchTier > 44) { maxMatchTier = 44; }
+
+                        
+                        soulTiers.TryGetValue(minMatchTier, out Tuple<int, int> res);
+                        soulTiers.TryGetValue(maxMatchTier, out Tuple<int, int> res2);
+                        lblMin.Text = string.Format("{0:#,0}", res.Item1);
+                        lblMax.Text = string.Format("{0:#,0}", res2.Item2);
+                    }
+                }
+
             }
         }
         private void chkRing_CheckedChanged(object sender, EventArgs e)
@@ -156,9 +199,35 @@ namespace SoulMemory_Calc
             UpdateLabels();
         }
 
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void cmbAction_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            UpdateLabels();
+        }
+
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             Process.Start(new ProcessStartInfo("https://github.com/Chaoticoz/DS2-SoulMemory-Calculator"));
+        }
+    }
+
+    public class MPAction
+    {
+        public int lowerTier { get; }
+        public int upperTier { get; }
+        public string clearName { get; }
+        public bool changedByRing { get; }
+
+        public MPAction(String clearName, int lowerTier, int upperTier, bool changedByRing = false)
+        {
+            this.clearName = clearName;
+            this.lowerTier = lowerTier;
+            this.upperTier = upperTier;
+            this.changedByRing = changedByRing;
         }
     }
 }
