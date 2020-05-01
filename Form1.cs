@@ -22,6 +22,9 @@ namespace SoulMemory_Calc
             SetupDictionary();
             txtInput.MaxLength = 9;
             this.TopMost = true;
+            Font font = new Font("Consolas", 10.0f);
+            foreach (Control control in Controls)
+                control.Font = font;
         }
 
 
@@ -144,8 +147,8 @@ namespace SoulMemory_Calc
             }
             if (soulTier != 0)
             {
-                lblMin.Text = "Min : " + getMatchingSoulLevels(soulTier).Item1.ToString();
-                lblMax.Text = "Max : " + getMatchingSoulLevels(soulTier).Item2.ToString();
+                lblMin.Text = string.Format("{0:#,0}",getMatchingSoulLevels(soulTier).Item1);
+                lblMax.Text =  string.Format("{0:#,0}", getMatchingSoulLevels(soulTier).Item2);
             }
         }
         private void chkRing_CheckedChanged(object sender, EventArgs e)
