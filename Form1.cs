@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -15,15 +16,17 @@ namespace SoulMemory_Calc
     {
         public Dictionary<int, Tuple<int,int>> soulTiers;
         int soulTier;
+        static int soulMemory;
         List<MPAction> actionList;
         int minMatchTier= 0;
         int maxMatchTier = 0;
-
-
+        public static bool isAttached = false;
         public Form1()
         {
+            CheckForIllegalCrossThreadCalls = false;
             InitializeComponent();
             SetupStuff();
+            (new Thread(new ThreadStart(this.UpdateMem))).Start();
             txtInput.MaxLength = 9;
             this.TopMost = true;
             Font font = new Font("Consolas", 10.0f);
@@ -213,8 +216,49 @@ namespace SoulMemory_Calc
         {
             Process.Start(new ProcessStartInfo("https://github.com/Chaoticoz/DS2-SoulMemory-Calculator"));
         }
-    }
 
+        public void UpdateMem()
+        {
+            while (true)
+            {
+                Thread.Sleep(100);
+
+                if (Memoryold.ProcessHandle == IntPtr.Zero)
+                {
+                    txtInput.Enabled = true;
+                    isAttached = false;
+                    Memoryold.ProcessHandle = Memoryold.AttachProc("DarkSoulsII");
+                }
+                else
+                {
+                    isAttached = true;
+
+                }
+                if (!Memoryold.isRunning)
+                {
+                    txtInput.Enabled = true;
+                    isAttached = false;
+                    Memoryold.ProcessHandle = Memoryold.AttachProc("DarkSoulsII");
+                }
+                if (isAttached)
+                {
+                    soulMemory = JunkCode.getSoulMemory();
+                    if(soulMemory != 0)
+                    {
+                        txtInput.Text = soulMemory.ToString();
+                        txtInput.Enabled = false;
+                    }
+                    else
+                    {
+                        txtInput.Enabled = true;
+                    }
+                }
+            }
+
+            
+        }
+    }
+   
     public class MPAction
     {
         public int lowerTier { get; }
